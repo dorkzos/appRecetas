@@ -53,7 +53,7 @@ st.markdown("""
         .stTextInput input:disabled,
         .stTextArea textarea:disabled,
         .stDateInput input:disabled {
-            background-color: #e8e8e8 !important;
+            background-color: #f0f0f0 !important;
             color: #333333 !important;
             cursor: not-allowed !important;
             font-weight: 500 !important;
@@ -220,13 +220,21 @@ with st.form(key='receta_form', clear_on_submit=False):
     
     col1, col2 = st.columns(2)
     with col1:
-        nombre = st.text_input("Nombre del Paciente", value=st.session_state.form_data['nombre'], key='nombre_input', disabled=st.session_state.pdf_generated)
+        nombre = st.text_area("Nombre del Paciente", value=st.session_state.form_data['nombre'], height=40, key='nombre_input', disabled=st.session_state.pdf_generated)
     with col2:
-        apellido = st.text_input("Apellido del Paciente", value=st.session_state.form_data['apellido'], key='apellido_input', disabled=st.session_state.pdf_generated)
+        apellido = st.text_area("Apellido del Paciente", value=st.session_state.form_data['apellido'], height=40, key='apellido_input', disabled=st.session_state.pdf_generated)
     
     col1, col2 = st.columns(2)
     with col1:
-        fecha = st.date_input("Fecha", value=st.session_state.form_data['fecha'], key='fecha_input', disabled=st.session_state.pdf_generated)
+        fecha_str = st.text_area("Fecha", value=st.session_state.form_data['fecha'].strftime('%d/%m/%Y'), height=40, key='fecha_input', disabled=st.session_state.pdf_generated)
+        # Convertir la fecha de vuelta a datetime si es necesario (cuando no está deshabilitada)
+        if not st.session_state.pdf_generated:
+            try:
+                fecha = datetime.strptime(fecha_str, '%d/%m/%Y')
+            except:
+                fecha = st.session_state.form_data['fecha']
+        else:
+            fecha = st.session_state.form_data['fecha']
     with col2:
         diagnostico = st.text_area("Diagnóstico", value=st.session_state.form_data['diagnostico'], height=80, key='diagnostico_input', disabled=st.session_state.pdf_generated)
     
