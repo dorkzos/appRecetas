@@ -1,12 +1,9 @@
 import streamlit as st
 from datetime import datetime
-from reportlab.lib.pagesizes import letter
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.units import inch
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
-from reportlab.lib import colors
+from PyPDF2 import PdfReader, PdfWriter
 from io import BytesIO
 import os
+from auth import AuthManager
 
 # Configuración de la página
 st.set_page_config(
@@ -37,82 +34,189 @@ st.markdown("""
             padding: 1em;
             border-radius: 0.5em;
             margin-bottom: 1em;
+            color: #000000;
+        }
+        .info-box pre {
+            color: #000000;
+            background-color: #ffffff;
+            padding: 0.5em;
+            border-radius: 0.3em;
+            border: 1px solid #ddd;
         }
     </style>
 """, unsafe_allow_html=True)
 
 
+def formatear_contenido(contenido):
+    """
+    Formatea el contenido para que Rp. seguido de / en nueva línea
+    se convierta en Rp./ en la misma línea.
+    """
+    # Reemplazar "Rp.\n/" por "Rp./"
+    contenido = contenido.replace("Rp.\n/", "Rp./")
+    # También manejar el caso con espacios
+    contenido = contenido.replace("Rp. \n/", "Rp./")
+    contenido = contenido.replace("Rp.\n /", "Rp./")
+    contenido = contenido.replace("Rp. \n /", "Rp./")
+    
+    return contenido
+
+
 def generar_pdf(nombre, apellido, fecha, diagnostico, tipo_documento, contenido):
     """
-    Genera un PDF con la información de la receta médica.
+    Rellena los campos del formulario PDF existente.
+    Campos: Date, Paciente, Dx, Texto1
     """
-    buffer = BytesIO()
-    
-    # Crear documento PDF
-    doc = SimpleDocTemplate(buffer, pagesize=letter, topMargin=0.5*inch, bottomMargin=0.5*inch)
-    
-    # Estilos
-    styles = getSampleStyleSheet()
-    title_style = ParagraphStyle(
-        'CustomTitle',
-        parent=styles['Heading1'],
-        fontSize=18,
-        textColor=colors.HexColor('#1f77b4'),
-        spaceAfter=12,
-        alignment=1  # Centro
-    )
-    
-    heading_style = ParagraphStyle(
-        'CustomHeading',
-        parent=styles['Heading2'],
-        fontSize=12,
-        textColor=colors.HexColor('#1f77b4'),
-        spaceAfter=6,
-        spaceBefore=6
-    )
-    
-    # Contenido del documento
-    story = []
-    
-    # Título
-    story.append(Paragraph("RECETA MÉDICA", title_style))
-    story.append(Spacer(1, 0.2*inch))
-    
-    # Información del paciente
-    story.append(Paragraph("INFORMACIÓN DEL PACIENTE", heading_style))
-    patient_data = [
-        ['Nombre:', f"{nombre} {apellido}"],
-        ['Fecha:', fecha.strftime('%d/%m/%Y')],
-        ['Diagnóstico:', diagnostico]
-    ]
-    patient_table = Table(patient_data, colWidths=[1.5*inch, 4*inch])
-    patient_table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#e8f0f7')),
-        ('TEXTCOLOR', (0, 0), (-1, -1), colors.black),
-        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-        ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, -1), 10),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
-        ('TOPPADDING', (0, 0), (-1, -1), 8),
-        ('GRID', (0, 0), (-1, -1), 1, colors.grey),
-    ]))
-    story.append(patient_table)
-    story.append(Spacer(1, 0.3*inch))
-    
-    # Tipo de documento y contenido
-    story.append(Paragraph(f"TIPO: {tipo_documento}", heading_style))
-    story.append(Spacer(1, 0.1*inch))
-    
-    # Contenido formateado
-    contenido_formateado = contenido.replace('\n', '<br/>')
-    story.append(Paragraph(f"<pre>{contenido_formateado}</pre>", styles['Normal']))
-    
-    # Construir PDF
-    doc.build(story)
-    buffer.seek(0)
-    
-    return buffer.getvalue()
+    try:
+        # Leer el PDF modelo
+        reader = PdfReader("modeloReceta.pdf")
+        writer = PdfWriter()
+        
+        # Copiar todas las páginas
+        for page in reader.pages:
+            writer.add_page(page)
+        
+        # Preparar los datos para rellenar
+        nombre_completo = f"{nombre} {apellido}"
+        fecha_formateada = fecha.strftime('%d/%m/%Y')
+        
+        # Formatear el contenido para que Rp.\n/ sea Rp./
+        contenido_formateado = formatear_contenido(contenido)
+        
+        # Rellenar los campos del formulario
+        writer.update_page_form_field_values(
+            writer.pages[0],
+            {
+                "Date": fecha_formateada,
+                "Paciente": nombre_completo,
+                "Dx": diagnostico,
+                "Texto1": contenido_formateado
+            }
+        )
+        
+        # Escribir el PDF en un buffer
+        output_buffer = BytesIO()
+        writer.write(output_buffer)
+        output_buffer.seek(0)
+        
+        return output_buffer.getvalue()
+        
+    except Exception as e:
+        raise Exception(f"Error al rellenar el PDF: {str(e)}")
 
+
+# Inicializar el gestor de autenticación
+auth_manager = AuthManager()
+
+# Inicializar session state para autenticación
+if 'logged_in' not in st.session_state:
+    st.session_state.logged_in = False
+    st.session_state.user_data = None
+    st.session_state.show_register = False
+
+# Función para mostrar el formulario de login
+def show_login_page():
+    st.markdown("<div class='main-title'>🔐 Iniciar Sesión</div>", unsafe_allow_html=True)
+    
+    col1, col2, col3 = st.columns([1, 2, 1])
+    
+    with col2:
+        with st.form(key='login_form'):
+            st.markdown("### 👤 Acceso al Sistema")
+            
+            username = st.text_input("Usuario", key='login_username')
+            password = st.text_input("Contraseña", type='password', key='login_password')
+            
+            col_a, col_b = st.columns(2)
+            
+            with col_a:
+                login_button = st.form_submit_button("🔓 Iniciar Sesión", use_container_width=True)
+            
+            with col_b:
+                register_button = st.form_submit_button("📝 Crear Cuenta", use_container_width=True)
+            
+            if login_button:
+                success, user_data, message = auth_manager.login(username, password)
+                
+                if success:
+                    st.session_state.logged_in = True
+                    st.session_state.user_data = user_data
+                    st.success(message)
+                    st.rerun()
+                else:
+                    st.error(message)
+            
+            if register_button:
+                st.session_state.show_register = True
+                st.rerun()
+
+# Función para mostrar el formulario de registro
+def show_register_page():
+    st.markdown("<div class='main-title'>📝 Crear Cuenta Nueva</div>", unsafe_allow_html=True)
+    
+    col1, col2, col3 = st.columns([1, 2, 1])
+    
+    with col2:
+        with st.form(key='register_form'):
+            st.markdown("### 👥 Registro de Usuario")
+            
+            username = st.text_input("Usuario (mínimo 3 caracteres)", key='register_username')
+            password = st.text_input("Contraseña (mínimo 6 caracteres)", type='password', key='register_password')
+            password_confirm = st.text_input("Confirmar Contraseña", type='password', key='register_password_confirm')
+            
+            st.markdown("### 👤 Datos Personales")
+            
+            nombre = st.text_input("Nombre", key='register_nombre')
+            apellido = st.text_input("Apellido", key='register_apellido')
+            
+            col_a, col_b = st.columns(2)
+            
+            with col_a:
+                register_submit = st.form_submit_button("✅ Registrar", use_container_width=True)
+            
+            with col_b:
+                back_button = st.form_submit_button("🔙 Volver", use_container_width=True)
+            
+            if register_submit:
+                if password != password_confirm:
+                    st.error("⚠️ Las contraseñas no coinciden")
+                else:
+                    success, message = auth_manager.register_user(username, password, nombre, apellido)
+                    
+                    if success:
+                        st.success(message)
+                        st.info("✨ Ahora puedes iniciar sesión con tu usuario")
+                        st.session_state.show_register = False
+                        # Pequeña pausa para que el usuario lea el mensaje
+                        import time
+                        time.sleep(2)
+                        st.rerun()
+                    else:
+                        st.error(message)
+            
+            if back_button:
+                st.session_state.show_register = False
+                st.rerun()
+
+# Verificar si el usuario está autenticado
+if not st.session_state.logged_in:
+    if st.session_state.show_register:
+        show_register_page()
+    else:
+        show_login_page()
+    st.stop()
+
+# Si llegamos aquí, el usuario está autenticado
+# Mostrar información del usuario en la barra lateral
+with st.sidebar:
+    st.markdown("### 👤 Usuario")
+    st.write(f"**{st.session_state.user_data['nombre']} {st.session_state.user_data['apellido']}**")
+    st.write(f"Usuario: `{st.session_state.user_data['username']}`")
+    
+    if st.button("🚪 Cerrar Sesión", use_container_width=True):
+        st.session_state.logged_in = False
+        st.session_state.user_data = None
+        st.rerun()
 
 # Título principal
 st.markdown("<div class='main-title'>📋 Generador de Recetas Médicas</div>", unsafe_allow_html=True)
@@ -127,6 +231,12 @@ if 'form_data' not in st.session_state:
         'tipo_documento': 'Receta (Rp.)',
         'contenido': ''
     }
+
+if 'pdf_generated' not in st.session_state:
+    st.session_state.pdf_generated = False
+
+if 'pdf_data' not in st.session_state:
+    st.session_state.pdf_data = None
 
 # Formulario principal
 with st.form(key='receta_form', clear_on_submit=False):
@@ -157,8 +267,8 @@ with st.form(key='receta_form', clear_on_submit=False):
     st.markdown("<div class='section-header'>📄 Contenido del Documento</div>", unsafe_allow_html=True)
     
     if tipo_documento == 'Receta (Rp.)':
-        label_contenido = "Receta (Rp. / Medicamentos, dosis, indicaciones)"
-        placeholder_contenido = "Rp.\n/\nAspirinas 500mg - 1 tableta cada 8 horas\nIbuprofeno 200mg - 1 tableta cada 6 horas si es necesario\n..."
+        label_contenido = "Receta (Rp./ Medicamentos, dosis, indicaciones)"
+        placeholder_contenido = "Rp./\n\nAspirinas 500mg - 1 tableta cada 8 horas\nIbuprofeno 200mg - 1 tableta cada 6 horas si es necesario\n..."
     else:
         label_contenido = "Indicaciones / Notas Médicas"
         placeholder_contenido = "Escriba aquí las indicaciones preoperatorias, notas médicas o cualquier otra información relevante..."
@@ -172,16 +282,13 @@ with st.form(key='receta_form', clear_on_submit=False):
     )
     
     # Botones de acción
-    col1, col2, col3 = st.columns([1, 1, 1])
+    col1, col2 = st.columns([1, 1])
     
     with col1:
         submit_button = st.form_submit_button("✅ Generar Documento", use_container_width=True)
     
     with col2:
         clear_button = st.form_submit_button("🔄 Limpiar Formulario", use_container_width=True)
-    
-    with col3:
-        st.form_submit_button("📥 Descargar PDF", use_container_width=True, disabled=True)
 
 # Procesar el formulario
 if submit_button:
@@ -198,21 +305,20 @@ if submit_button:
     # Validar que los campos no estén vacíos
     if not nombre or not apellido or not diagnostico or not contenido:
         st.error("⚠️ Por favor, completa todos los campos antes de generar el documento.")
+        st.session_state.pdf_generated = False
     else:
         try:
             st.success("✅ Documento generado exitosamente.")
             
+            # Formatear el contenido antes de generar el PDF
+            contenido_formateado = formatear_contenido(contenido)
+            
             # Generar PDF
             pdf_buffer = generar_pdf(nombre, apellido, fecha, diagnostico, tipo_documento, contenido)
             
-            # Mostrar botón de descarga
-            st.download_button(
-                label="📥 Descargar PDF",
-                data=pdf_buffer,
-                file_name=f"Receta_{apellido}_{nombre}_{fecha.strftime('%Y%m%d')}.pdf",
-                mime="application/pdf",
-                use_container_width=True
-            )
+            # Guardar PDF en session state
+            st.session_state.pdf_data = pdf_buffer
+            st.session_state.pdf_generated = True
             
             # Mostrar vista previa del documento
             st.markdown("<div class='section-header'>👁️ Vista Previa del Documento</div>", unsafe_allow_html=True)
@@ -224,11 +330,13 @@ if submit_button:
                 <b>Tipo de Documento:</b> {tipo_documento}<br>
                 <hr>
                 <b>Contenido:</b><br>
-                <pre>{contenido}</pre>
+                <pre>{contenido_formateado}</pre>
             </div>
             """, unsafe_allow_html=True)
+            
         except Exception as e:
             st.error(f"❌ Error al generar el documento: {str(e)}")
+            st.session_state.pdf_generated = False
 
 if clear_button:
     st.session_state.form_data = {
@@ -239,4 +347,16 @@ if clear_button:
         'tipo_documento': 'Receta (Rp.)',
         'contenido': ''
     }
+    st.session_state.pdf_generated = False
+    st.session_state.pdf_data = None
     st.rerun()
+
+# Botón de descarga FUERA del formulario
+if st.session_state.pdf_generated and st.session_state.pdf_data:
+    st.download_button(
+        label="📥 Descargar PDF",
+        data=st.session_state.pdf_data,
+        file_name=f"Receta_{st.session_state.form_data['apellido']}_{st.session_state.form_data['nombre']}_{st.session_state.form_data['fecha'].strftime('%Y%m%d')}.pdf",
+        mime="application/pdf",
+        use_container_width=True
+    )

@@ -12,8 +12,11 @@ ENV/
 # Archivos de Streamlit
 .streamlit/secrets.toml
 
-# PDFs generados (opcional, si no quieres subirlos)
-*.pdf
+# PDFs generados (NO el modelo)
+receta_*.pdf
+*_prueba.pdf
+
+# IMPORTANTE: modeloReceta.pdf NO debe estar aquí, se necesita para la app
 
 # Archivos del sistema Windows
 Thumbs.db
@@ -26,3 +29,6 @@ $RECYCLE.BIN/
 # Archivos temporales
 *.log
 *.tmp
+
+# Base de datos de usuarios (seguridad)
+users.json
