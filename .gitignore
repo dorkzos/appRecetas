@@ -32,3 +32,10 @@ $RECYCLE.BIN/
 
 # Base de datos de usuarios (seguridad)
 users.json
+users.db
+users.db-journal
+
+# Credenciales de Google Cloud
+*.json
+!package.json
+!tsconfig.json

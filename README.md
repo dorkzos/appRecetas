@@ -100,13 +100,45 @@ appRecetas/
 
 ## 🌐 Deploy en Streamlit Cloud
 
-1. **Fork o push** este repositorio a tu GitHub
-2. Ve a [share.streamlit.io](https://share.streamlit.io/)
-3. Conecta tu repositorio
-4. Selecciona `app.py` como archivo principal
-5. Deploy automático
+### 1. Push a GitHub
+```bash
+git push
+```
 
-⚠️ **Nota:** Después del deploy, deberás crear usuarios desde la interfaz de registro.
+### 2. Deploy en Streamlit Cloud
+1. Ve a [share.streamlit.io](https://share.streamlit.io/)
+2. Conecta tu repositorio `dorkzos/appRecetas`
+3. Selecciona `app.py` como archivo principal
+4. Click en **Deploy**
+
+### 3. Configurar Usuarios (IMPORTANTE)
+
+Una vez deployado, ve a **Settings → Secrets** y agrega tus usuarios:
+
+```toml
+[users.admin]
+password = "8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918"
+nombre = "Administrador"
+apellido = "Sistema"
+
+[users.tu_usuario]
+password = "TU_HASH_AQUI"
+nombre = "Tu Nombre"
+apellido = "Tu Apellido"
+```
+
+### 4. Generar Hash de Contraseña
+
+```bash
+python generar_hash.py
+```
+
+O manualmente:
+```bash
+python -c "import hashlib; print(hashlib.sha256('tu_contraseña'.encode()).hexdigest())"
+```
+
+🔒 **Seguridad:** Los usuarios están SOLO en Streamlit Secrets, NO en GitHub.
 
 ## 📝 Uso
 

@@ -10,9 +10,20 @@ from pathlib import Path
 class AuthManager:
     """Gestor de autenticación de usuarios"""
     
-    def __init__(self, users_file="users.json"):
+    def __init__(self, users_file="users.json", use_secrets=False):
         self.users_file = users_file
-        self._inicializar_archivo()
+        self.use_secrets = use_secrets
+        
+        # Detectar automáticamente si estamos en Streamlit Cloud
+        try:
+            import streamlit as st
+            if hasattr(st, 'secrets') and 'users' in st.secrets:
+                self.use_secrets = True
+        except:
+            pass
+        
+        if not self.use_secrets:
+            self._inicializar_archivo()
     
     def _inicializar_archivo(self):
         """Crea el archivo de usuarios si no existe"""
@@ -25,15 +36,30 @@ class AuthManager:
         return hashlib.sha256(password.encode()).hexdigest()
     
     def _load_users(self):
-        """Carga los usuarios desde el archivo"""
-        try:
-            with open(self.users_file, 'r') as f:
-                return json.load(f)
-        except:
-            return {}
+        """Carga los usuarios desde el archivo o Streamlit Secrets"""
+        if self.use_secrets:
+            try:
+                import streamlit as st
+                # Convertir los secrets a diccionario
+                users = {}
+                for username in st.secrets.users:
+                    users[username] = dict(st.secrets.users[username])
+                return users
+            except:
+                return {}
+        else:
+            try:
+                with open(self.users_file, 'r') as f:
+                    return json.load(f)
+            except:
+                return {}
     
     def _save_users(self, users):
-        """Guarda los usuarios en el archivo"""
+        """Guarda los usuarios en el archivo (solo modo local)"""
+        if self.use_secrets:
+            # En modo secrets, no podemos guardar automáticamente
+            raise Exception("❌ No se pueden crear usuarios automáticamente con Streamlit Secrets. Debes agregarlos manualmente en la configuración de Streamlit Cloud.")
+        
         with open(self.users_file, 'w') as f:
             json.dump(users, f, indent=2)
     

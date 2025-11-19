@@ -127,13 +127,7 @@ def show_login_page():
             username = st.text_input("Usuario", key='login_username')
             password = st.text_input("Contraseña", type='password', key='login_password')
             
-            col_a, col_b = st.columns(2)
-            
-            with col_a:
-                login_button = st.form_submit_button("🔓 Iniciar Sesión", use_container_width=True)
-            
-            with col_b:
-                register_button = st.form_submit_button("📝 Crear Cuenta", use_container_width=True)
+            login_button = st.form_submit_button("🔓 Iniciar Sesión", use_container_width=True)
             
             if login_button:
                 success, user_data, message = auth_manager.login(username, password)
@@ -145,65 +139,14 @@ def show_login_page():
                     st.rerun()
                 else:
                     st.error(message)
-            
-            if register_button:
-                st.session_state.show_register = True
-                st.rerun()
-
-# Función para mostrar el formulario de registro
-def show_register_page():
-    st.markdown("<div class='main-title'>📝 Crear Cuenta Nueva</div>", unsafe_allow_html=True)
-    
-    col1, col2, col3 = st.columns([1, 2, 1])
-    
-    with col2:
-        with st.form(key='register_form'):
-            st.markdown("### 👥 Registro de Usuario")
-            
-            username = st.text_input("Usuario (mínimo 3 caracteres)", key='register_username')
-            password = st.text_input("Contraseña (mínimo 6 caracteres)", type='password', key='register_password')
-            password_confirm = st.text_input("Confirmar Contraseña", type='password', key='register_password_confirm')
-            
-            st.markdown("### 👤 Datos Personales")
-            
-            nombre = st.text_input("Nombre", key='register_nombre')
-            apellido = st.text_input("Apellido", key='register_apellido')
-            
-            col_a, col_b = st.columns(2)
-            
-            with col_a:
-                register_submit = st.form_submit_button("✅ Registrar", use_container_width=True)
-            
-            with col_b:
-                back_button = st.form_submit_button("🔙 Volver", use_container_width=True)
-            
-            if register_submit:
-                if password != password_confirm:
-                    st.error("⚠️ Las contraseñas no coinciden")
-                else:
-                    success, message = auth_manager.register_user(username, password, nombre, apellido)
-                    
-                    if success:
-                        st.success(message)
-                        st.info("✨ Ahora puedes iniciar sesión con tu usuario")
-                        st.session_state.show_register = False
-                        # Pequeña pausa para que el usuario lea el mensaje
-                        import time
-                        time.sleep(2)
-                        st.rerun()
-                    else:
-                        st.error(message)
-            
-            if back_button:
-                st.session_state.show_register = False
-                st.rerun()
+        
+        # Información de contacto para solicitar acceso
+        st.markdown("---")
+        st.info("ℹ️ **¿Necesitas una cuenta?** Contacta al administrador del sistema.")
 
 # Verificar si el usuario está autenticado
 if not st.session_state.logged_in:
-    if st.session_state.show_register:
-        show_register_page()
-    else:
-        show_login_page()
+    show_login_page()
     st.stop()
 
 # Si llegamos aquí, el usuario está autenticado
