@@ -56,6 +56,12 @@ st.markdown("""
             background-color: #e8e8e8 !important;
             color: #333333 !important;
             cursor: not-allowed !important;
+            font-weight: 500 !important;
+        }
+        /* Mejorar visibilidad de campos deshabilitados */
+        .stTextInput input:disabled::placeholder,
+        .stTextArea textarea:disabled::placeholder {
+            color: #666666 !important;
         }
     </style>
 """, unsafe_allow_html=True)
@@ -214,13 +220,13 @@ with st.form(key='receta_form', clear_on_submit=False):
     
     col1, col2 = st.columns(2)
     with col1:
-        nombre = st.text_input("Nombre del Paciente", value=st.session_state.form_data['nombre'], key='nombre_input', disabled=False)
+        nombre = st.text_input("Nombre del Paciente", value=st.session_state.form_data['nombre'], key='nombre_input', disabled=st.session_state.pdf_generated)
     with col2:
-        apellido = st.text_input("Apellido del Paciente", value=st.session_state.form_data['apellido'], key='apellido_input', disabled=False)
+        apellido = st.text_input("Apellido del Paciente", value=st.session_state.form_data['apellido'], key='apellido_input', disabled=st.session_state.pdf_generated)
     
     col1, col2 = st.columns(2)
     with col1:
-        fecha = st.date_input("Fecha", value=st.session_state.form_data['fecha'], key='fecha_input', disabled=False)
+        fecha = st.date_input("Fecha", value=st.session_state.form_data['fecha'], key='fecha_input', disabled=st.session_state.pdf_generated)
     with col2:
         diagnostico = st.text_area("Diagnóstico", value=st.session_state.form_data['diagnostico'], height=80, key='diagnostico_input', disabled=st.session_state.pdf_generated)
     
