@@ -306,11 +306,15 @@ if clear_button:
     st.session_state.pdf_data = None
     st.rerun()
 
-# Botón de descarga FUERA del formulario
+# Botón de descarga FUERA del formulario - Solución para sandbox de Streamlit Cloud
 if st.session_state.pdf_generated and st.session_state.pdf_data:
     try:
         # Verificar que pdf_data tenga contenido
         if isinstance(st.session_state.pdf_data, bytes) and len(st.session_state.pdf_data) > 0:
+            # Usar st.download_button - funciona mejor en Streamlit Cloud
+            st.markdown("---")
+            st.markdown("### 📥 Descarga del Documento")
+            
             st.download_button(
                 label="📥 Descargar PDF",
                 data=st.session_state.pdf_data,
@@ -318,7 +322,7 @@ if st.session_state.pdf_generated and st.session_state.pdf_data:
                 mime="application/pdf",
                 use_container_width=True
             )
-            st.info(f"✅ PDF listo para descargar ({len(st.session_state.pdf_data)} bytes)")
+            st.info(f"✅ PDF listo para descargar ({len(st.session_state.pdf_data)} bytes)\n\n**💡 Nota:** Si el navegador te pide permiso, autoriza la descarga. Si aún así no descargas, intenta con otro navegador.")
         else:
             st.error("❌ El PDF generado está vacío. Por favor, genera el documento nuevamente.")
     except Exception as e:
