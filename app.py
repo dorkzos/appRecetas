@@ -243,30 +243,14 @@ with st.form(key='receta_form', clear_on_submit=False):
         label_contenido = "Indicaciones / Notas Médicas"
         placeholder_contenido = "Escriba aquí las indicaciones preoperatorias, notas médicas o cualquier otra información relevante..."
     
-    # Mostrar botones de formato DENTRO del formulario usando HTML personalizado
-    if not st.session_state.pdf_generated:
-        st.markdown("""
-        <div style="display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap;">
-            <button onclick="document.querySelector('[data-testid=stTextArea]').value += '\\n**texto en negrita**'; document.querySelector('[data-testid=stTextArea]').dispatchEvent(new Event('input', {{ bubbles: true }}));" 
-                    style="padding: 6px 12px; background-color: #f0f2f6; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: 500;">🅱️ Negrita</button>
-            <button onclick="document.querySelector('[data-testid=stTextArea]').value += '\\n*texto en cursiva*'; document.querySelector('[data-testid=stTextArea]').dispatchEvent(new Event('input', {{ bubbles: true }}));" 
-                    style="padding: 6px 12px; background-color: #f0f2f6; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: 500;">🅸️ Cursiva</button>
-            <button onclick="document.querySelector('[data-testid=stTextArea]').value += '\\n• Elemento'; document.querySelector('[data-testid=stTextArea]').dispatchEvent(new Event('input', {{ bubbles: true }}));" 
-                    style="padding: 6px 12px; background-color: #f0f2f6; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: 500;">🔤 Viñeta</button>
-            <button onclick="document.querySelector('[data-testid=stTextArea]').value += '\\n1. Elemento'; document.querySelector('[data-testid=stTextArea]').dispatchEvent(new Event('input', {{ bubbles: true }}));" 
-                    style="padding: 6px 12px; background-color: #f0f2f6; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: 500;">🔢 Número</button>
-            <button onclick="document.querySelector('[data-testid=stTextArea]').value += '\\n---'; document.querySelector('[data-testid=stTextArea]').dispatchEvent(new Event('input', {{ bubbles: true }}));" 
-                    style="padding: 6px 12px; background-color: #f0f2f6; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: 500;">➖ Línea</button>
-        </div>
-        """, unsafe_allow_html=True)
-    
     contenido = st.text_area(
         label_contenido,
         value=st.session_state.form_data['contenido'],
         height=250,
         placeholder=placeholder_contenido,
         key='contenido_input',
-        disabled=st.session_state.pdf_generated
+        disabled=st.session_state.pdf_generated,
+        help="💡 Usa **texto** para negrita, *texto* para cursiva, • para viñetas, 1. para numeración"
     )
     
     # Botones de acción
@@ -282,6 +266,38 @@ with st.form(key='receta_form', clear_on_submit=False):
     
     with col2:
         clear_button = st.form_submit_button("🔄 Limpiar Formulario", use_container_width=True)
+
+# Botones de formato FUERA del formulario - Estos SÍ funcionan
+if not st.session_state.pdf_generated:
+    st.markdown("---")
+    st.markdown("**✨ Herramientas de Formato para el Contenido:**")
+    
+    col_btn1, col_btn2, col_btn3, col_btn4, col_btn5 = st.columns(5)
+    
+    with col_btn1:
+        if st.button("🅱️ Negrita", key="fmt_bold", use_container_width=True):
+            st.session_state.form_data['contenido'] += "\n**texto en negrita**"
+            st.rerun()
+    
+    with col_btn2:
+        if st.button("🅸️ Cursiva", key="fmt_italic", use_container_width=True):
+            st.session_state.form_data['contenido'] += "\n*texto en cursiva*"
+            st.rerun()
+    
+    with col_btn3:
+        if st.button("🔤 Viñeta", key="fmt_bullet", use_container_width=True):
+            st.session_state.form_data['contenido'] += "\n• Elemento"
+            st.rerun()
+    
+    with col_btn4:
+        if st.button("🔢 Número", key="fmt_number", use_container_width=True):
+            st.session_state.form_data['contenido'] += "\n1. Elemento"
+            st.rerun()
+    
+    with col_btn5:
+        if st.button("➖ Línea", key="fmt_line", use_container_width=True):
+            st.session_state.form_data['contenido'] += "\n---"
+            st.rerun()
 
 # Procesar el formulario
 if submit_button:
