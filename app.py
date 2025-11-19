@@ -68,6 +68,11 @@ def generar_pdf(nombre, apellido, fecha, diagnostico, tipo_documento, contenido)
     Campos: Date, Paciente, Dx, Texto1
     """
     try:
+        # Verificar que el archivo existe
+        import os
+        if not os.path.exists("modeloReceta.pdf"):
+            raise FileNotFoundError("No se encontró el archivo modeloReceta.pdf")
+        
         # Leer el PDF modelo
         reader = PdfReader("modeloReceta.pdf")
         writer = PdfWriter()
@@ -101,8 +106,15 @@ def generar_pdf(nombre, apellido, fecha, diagnostico, tipo_documento, contenido)
         
         return output_buffer.getvalue()
         
+    except FileNotFoundError as e:
+        st.error(f"❌ {str(e)}")
+        st.error("🔍 Archivos disponibles en el directorio:")
+        st.code("\n".join(os.listdir(".")))
+        raise
     except Exception as e:
-        raise Exception(f"Error al rellenar el PDF: {str(e)}")
+        st.error(f"❌ Error al generar PDF: {str(e)}")
+        st.error(f"📁 Directorio actual: {os.getcwd()}")
+        raise
 
 
 # Inicializar el gestor de autenticación
@@ -296,10 +308,18 @@ if clear_button:
 
 # Botón de descarga FUERA del formulario
 if st.session_state.pdf_generated and st.session_state.pdf_data:
-    st.download_button(
-        label="📥 Descargar PDF",
-        data=st.session_state.pdf_data,
-        file_name=f"Receta_{st.session_state.form_data['apellido']}_{st.session_state.form_data['nombre']}_{st.session_state.form_data['fecha'].strftime('%Y%m%d')}.pdf",
-        mime="application/pdf",
-        use_container_width=True
-    )
+    try:
+        # Verificar que pdf_data tenga contenido
+        if len(st.session_state.pdf_data) > 0:
+            st.download_button(
+                label="📥 Descargar PDF",
+                data=st.session_state.pdf_data,
+                file_name=f"Receta_{st.session_state.form_data['apellido']}_{st.session_state.form_data['nombre']}_{st.session_state.form_data['fecha'].strftime('%Y%m%d')}.pdf",
+                mime="application/pdf",
+                use_container_width=True,
+                key="download_pdf_button"
+            )
+        else:
+            st.error("❌ El PDF generado está vacío. Por favor, genera el documento nuevamente.")
+    except Exception as e:
+        st.error(f"❌ Error al preparar la descarga: {str(e)}")
