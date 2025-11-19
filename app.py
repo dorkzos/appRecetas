@@ -84,7 +84,7 @@ def formatear_contenido(contenido):
 
 def generar_pdf(nombre, apellido, fecha, diagnostico, tipo_documento, contenido):
     """
-    Rellena los campos del formulario PDF existente.
+    Rellena los campos del formulario PDF existente y los aplana para visualización directa.
     Campos: Date, Paciente, Dx, Texto1
     """
     try:
@@ -118,6 +118,35 @@ def generar_pdf(nombre, apellido, fecha, diagnostico, tipo_documento, contenido)
                 "Texto1": contenido_formateado
             }
         )
+        
+        # Aplanar los campos del formulario para que se visualicen directamente
+        # sin necesidad de hacer click (PyPDF2 >= 3.0)
+        try:
+            writer.add_metadata({"/Producer": "Generador de Recetas Médicas"})
+            # Usar el método de aplanamiento si está disponible
+            for page in writer.pages:
+                # Marcar que los campos deben ser visibles siempre
+                if "/Annots" in page:
+                    annots = page["/Annots"]
+                    for annot_ref in annots:
+                        annot = annot_ref.get_object()
+                        if annot["/Subtype"] == "/Widget":
+                            # Hacer visible el campo por defecto
+                            if "/F" not in annot:
+                                annot["/F"] = 4  # PrintOnly flag para que sea visible
+                            else:
+                                annot["/F"] = annot["/F"] | 4
+        except Exception as e:
+            # Si hay error, intentar con el método directo flatten si existe
+            pass
+        
+        # Intentar usar flatten() si está disponible (PyPDF2 >= 3.0)
+        try:
+            writer.pages[0].flatten(list(writer.pages[0].get_fields().keys()) if hasattr(writer.pages[0], 'get_fields') else None)
+        except (AttributeError, TypeError):
+            # Si flatten no está disponible o falla, continuar sin aplanar
+            # Los campos seguirán siendo rellenados pero interactivos
+            pass
         
         # Escribir el PDF en un buffer
         output_buffer = BytesIO()
@@ -220,21 +249,13 @@ with st.form(key='receta_form', clear_on_submit=False):
     
     col1, col2 = st.columns(2)
     with col1:
-        nombre = st.text_area("Nombre del Paciente", value=st.session_state.form_data['nombre'], height=40, key='nombre_input', disabled=st.session_state.pdf_generated)
+        nombre = st.text_input("Nombre del Paciente", value=st.session_state.form_data['nombre'], key='nombre_input', disabled=st.session_state.pdf_generated)
     with col2:
-        apellido = st.text_area("Apellido del Paciente", value=st.session_state.form_data['apellido'], height=40, key='apellido_input', disabled=st.session_state.pdf_generated)
+        apellido = st.text_input("Apellido del Paciente", value=st.session_state.form_data['apellido'], key='apellido_input', disabled=st.session_state.pdf_generated)
     
     col1, col2 = st.columns(2)
     with col1:
-        fecha_str = st.text_area("Fecha", value=st.session_state.form_data['fecha'].strftime('%d/%m/%Y'), height=40, key='fecha_input', disabled=st.session_state.pdf_generated)
-        # Convertir la fecha de vuelta a datetime si es necesario (cuando no está deshabilitada)
-        if not st.session_state.pdf_generated:
-            try:
-                fecha = datetime.strptime(fecha_str, '%d/%m/%Y')
-            except:
-                fecha = st.session_state.form_data['fecha']
-        else:
-            fecha = st.session_state.form_data['fecha']
+        fecha = st.date_input("Fecha", value=st.session_state.form_data['fecha'], key='fecha_input', disabled=st.session_state.pdf_generated)
     with col2:
         diagnostico = st.text_area("Diagnóstico", value=st.session_state.form_data['diagnostico'], height=80, key='diagnostico_input', disabled=st.session_state.pdf_generated)
     
