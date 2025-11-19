@@ -243,6 +243,36 @@ with st.form(key='receta_form', clear_on_submit=False):
         label_contenido = "Indicaciones / Notas Médicas"
         placeholder_contenido = "Escriba aquí las indicaciones preoperatorias, notas médicas o cualquier otra información relevante..."
     
+    # Mostrar botones de formato solo si no está generado
+    if not st.session_state.pdf_generated:
+        st.markdown("**✨ Herramientas de Formato:**")
+        col_fmt1, col_fmt2, col_fmt3, col_fmt4, col_fmt5 = st.columns(5)
+        
+        with col_fmt1:
+            if st.button("🅱️ Negrita", key="btn_bold", use_container_width=True):
+                st.session_state.form_data['contenido'] += "\n**texto en negrita**"
+                st.rerun()
+        
+        with col_fmt2:
+            if st.button("🅸️ Cursiva", key="btn_italic", use_container_width=True):
+                st.session_state.form_data['contenido'] += "\n*texto en cursiva*"
+                st.rerun()
+        
+        with col_fmt3:
+            if st.button("🔤 Viñeta", key="btn_bullet", use_container_width=True):
+                st.session_state.form_data['contenido'] += "\n• Elemento"
+                st.rerun()
+        
+        with col_fmt4:
+            if st.button("🔢 Número", key="btn_number", use_container_width=True):
+                st.session_state.form_data['contenido'] += "\n1. Elemento"
+                st.rerun()
+        
+        with col_fmt5:
+            if st.button("➖ Línea", key="btn_line", use_container_width=True):
+                st.session_state.form_data['contenido'] += "\n---"
+                st.rerun()
+    
     contenido = st.text_area(
         label_contenido,
         value=st.session_state.form_data['contenido'],
