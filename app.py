@@ -43,6 +43,20 @@ st.markdown("""
             border-radius: 0.3em;
             border: 1px solid #ddd;
         }
+        /* Mejorar visibilidad de labels */
+        label {
+            color: #1f1f1f !important;
+            font-weight: 600 !important;
+            font-size: 0.95rem !important;
+        }
+        /* Estilos para campos deshabilitados */
+        .stTextInput input:disabled,
+        .stTextArea textarea:disabled,
+        .stDateInput input:disabled {
+            background-color: #e8e8e8 !important;
+            color: #333333 !important;
+            cursor: not-allowed !important;
+        }
     </style>
 """, unsafe_allow_html=True)
 
@@ -200,15 +214,15 @@ with st.form(key='receta_form', clear_on_submit=False):
     
     col1, col2 = st.columns(2)
     with col1:
-        nombre = st.text_input("Nombre del Paciente", value=st.session_state.form_data['nombre'], key='nombre_input')
+        nombre = st.text_input("Nombre del Paciente", value=st.session_state.form_data['nombre'], key='nombre_input', disabled=st.session_state.pdf_generated)
     with col2:
-        apellido = st.text_input("Apellido del Paciente", value=st.session_state.form_data['apellido'], key='apellido_input')
+        apellido = st.text_input("Apellido del Paciente", value=st.session_state.form_data['apellido'], key='apellido_input', disabled=st.session_state.pdf_generated)
     
     col1, col2 = st.columns(2)
     with col1:
-        fecha = st.date_input("Fecha", value=st.session_state.form_data['fecha'], key='fecha_input')
+        fecha = st.date_input("Fecha", value=st.session_state.form_data['fecha'], key='fecha_input', disabled=st.session_state.pdf_generated)
     with col2:
-        diagnostico = st.text_area("Diagnóstico", value=st.session_state.form_data['diagnostico'], height=80, key='diagnostico_input')
+        diagnostico = st.text_area("Diagnóstico", value=st.session_state.form_data['diagnostico'], height=80, key='diagnostico_input', disabled=st.session_state.pdf_generated)
     
     st.markdown("<div class='section-header'>📝 Tipo de Documento</div>", unsafe_allow_html=True)
     
@@ -216,7 +230,8 @@ with st.form(key='receta_form', clear_on_submit=False):
         "Selecciona el tipo de documento:",
         options=['Receta (Rp.)', 'Indicaciones / Notas'],
         index=0 if st.session_state.form_data['tipo_documento'] == 'Receta (Rp.)' else 1,
-        key='tipo_documento_input'
+        key='tipo_documento_input',
+        disabled=st.session_state.pdf_generated
     )
     
     st.markdown("<div class='section-header'>📄 Contenido del Documento</div>", unsafe_allow_html=True)
@@ -233,14 +248,20 @@ with st.form(key='receta_form', clear_on_submit=False):
         value=st.session_state.form_data['contenido'],
         height=250,
         placeholder=placeholder_contenido,
-        key='contenido_input'
+        key='contenido_input',
+        disabled=st.session_state.pdf_generated
     )
     
     # Botones de acción
     col1, col2 = st.columns([1, 1])
     
     with col1:
-        submit_button = st.form_submit_button("✅ Generar Documento", use_container_width=True)
+        # El botón "Generar" solo se muestra si no hay PDF generado
+        if not st.session_state.pdf_generated:
+            submit_button = st.form_submit_button("✅ Generar Documento", use_container_width=True)
+        else:
+            submit_button = False
+            st.info("📄 Documento ya generado. Usa 'Limpiar Formulario' para crear uno nuevo.")
     
     with col2:
         clear_button = st.form_submit_button("🔄 Limpiar Formulario", use_container_width=True)
