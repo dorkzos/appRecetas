@@ -243,14 +243,23 @@ with st.form(key='receta_form', clear_on_submit=False):
         label_contenido = "Indicaciones / Notas Médicas"
         placeholder_contenido = "Escriba aquí las indicaciones preoperatorias, notas médicas o cualquier otra información relevante..."
     
+            contenido = st.text_area(
+                    label_contenido,
+                    value=st.session_state.form_data['contenido'],
+                    height=250,
+                    placeholder=placeholder_contenido,
+                    key='contenido_input',
+                    disabled=st.session_state.pdf_generated,
+                    help="💡 Usa **texto** para negrita, *texto* para cursiva, • para viñetas, 1. para numeración"
+            )
+    
     contenido = st.text_area(
         label_contenido,
         value=st.session_state.form_data['contenido'],
         height=250,
         placeholder=placeholder_contenido,
         key='contenido_input',
-        disabled=st.session_state.pdf_generated,
-        help="💡 Usa **texto** para negrita, *texto* para cursiva, • para viñetas, 1. para numeración"
+        disabled=st.session_state.pdf_generated
     )
     
     # Botones de acción
@@ -266,38 +275,6 @@ with st.form(key='receta_form', clear_on_submit=False):
     
     with col2:
         clear_button = st.form_submit_button("🔄 Limpiar Formulario", use_container_width=True)
-
-# Botones de formato FUERA del formulario - Estos SÍ funcionan
-if not st.session_state.pdf_generated:
-    st.markdown("---")
-    st.markdown("**✨ Herramientas de Formato para el Contenido:**")
-    
-    col_btn1, col_btn2, col_btn3, col_btn4, col_btn5 = st.columns(5)
-    
-    with col_btn1:
-        if st.button("🅱️ Negrita", key="fmt_bold", use_container_width=True):
-            st.session_state.form_data['contenido'] += "\n**texto en negrita**"
-            st.rerun()
-    
-    with col_btn2:
-        if st.button("🅸️ Cursiva", key="fmt_italic", use_container_width=True):
-            st.session_state.form_data['contenido'] += "\n*texto en cursiva*"
-            st.rerun()
-    
-    with col_btn3:
-        if st.button("🔤 Viñeta", key="fmt_bullet", use_container_width=True):
-            st.session_state.form_data['contenido'] += "\n• Elemento"
-            st.rerun()
-    
-    with col_btn4:
-        if st.button("🔢 Número", key="fmt_number", use_container_width=True):
-            st.session_state.form_data['contenido'] += "\n1. Elemento"
-            st.rerun()
-    
-    with col_btn5:
-        if st.button("➖ Línea", key="fmt_line", use_container_width=True):
-            st.session_state.form_data['contenido'] += "\n---"
-            st.rerun()
 
 # Procesar el formulario
 if submit_button:
@@ -342,23 +319,6 @@ if submit_button:
                 <pre>{contenido_formateado}</pre>
             </div>
             """, unsafe_allow_html=True)
-            
-        except Exception as e:
-            st.error(f"❌ Error al generar el documento: {str(e)}")
-            st.session_state.pdf_generated = False
-
-if clear_button:
-    st.session_state.form_data = {
-        'nombre': '',
-        'apellido': '',
-        'fecha': datetime.now(),
-        'diagnostico': '',
-        'tipo_documento': 'Receta (Rp.)',
-        'contenido': ''
-    }
-    st.session_state.pdf_generated = False
-    st.session_state.pdf_data = None
-    st.rerun()
 
 # Botón de descarga FUERA del formulario - Solución para sandbox de Streamlit Cloud
 if st.session_state.pdf_generated and st.session_state.pdf_data:
