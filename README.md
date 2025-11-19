@@ -53,23 +53,11 @@ streamlit run app.py
 6. **Abrir en el navegador**
    - La app se abrirá automáticamente en `http://localhost:8501`
 
-## 👤 Primer Uso
+## 👤 Configuración de Usuarios
 
-### Crear usuario de prueba
+Los usuarios se configuran directamente en **Streamlit Cloud → Settings → Secrets**.
 
-```bash
-python crear_usuario_prueba.py
-```
-
-Esto creará un usuario con las siguientes credenciales:
-- **Usuario:** admin
-- **Contraseña:** admin123
-
-⚠️ **Importante:** Cambia estas credenciales en producción.
-
-### Crear tu propio usuario
-
-También puedes crear una cuenta directamente desde la aplicación usando el botón "📝 Crear Cuenta".
+Ver guía completa en: [`COMO_AGREGAR_USUARIOS.md`](COMO_AGREGAR_USUARIOS.md)
 
 ## 🛠️ Tecnologías
 
@@ -84,11 +72,10 @@ appRecetas/
 ├── app.py                    # Aplicación principal
 ├── auth.py                   # Sistema de autenticación
 ├── modeloReceta.pdf          # Plantilla PDF de receta
-├── crear_usuario_prueba.py   # Script para crear usuario de prueba
-├── leer_campos_pdf.py        # Utilidad para inspeccionar campos PDF
-├── test_rellenar_pdf.py      # Test de relleno de PDF
+├── generar_hash.py           # Generador de hashes para contraseñas
 ├── requirements.txt          # Dependencias
 ├── .gitignore               # Archivos ignorados por Git
+├── COMO_AGREGAR_USUARIOS.md # Guía para agregar usuarios
 └── README.md                # Este archivo
 ```
 
