@@ -310,16 +310,18 @@ if clear_button:
 if st.session_state.pdf_generated and st.session_state.pdf_data:
     try:
         # Verificar que pdf_data tenga contenido
-        if len(st.session_state.pdf_data) > 0:
+        if isinstance(st.session_state.pdf_data, bytes) and len(st.session_state.pdf_data) > 0:
             st.download_button(
                 label="📥 Descargar PDF",
                 data=st.session_state.pdf_data,
                 file_name=f"Receta_{st.session_state.form_data['apellido']}_{st.session_state.form_data['nombre']}_{st.session_state.form_data['fecha'].strftime('%Y%m%d')}.pdf",
                 mime="application/pdf",
-                use_container_width=True,
-                key="download_pdf_button"
+                use_container_width=True
             )
+            st.info(f"✅ PDF listo para descargar ({len(st.session_state.pdf_data)} bytes)")
         else:
             st.error("❌ El PDF generado está vacío. Por favor, genera el documento nuevamente.")
     except Exception as e:
         st.error(f"❌ Error al preparar la descarga: {str(e)}")
+        st.error(f"Tipo de datos: {type(st.session_state.pdf_data)}")
+        st.error(f"Tamaño: {len(st.session_state.pdf_data) if isinstance(st.session_state.pdf_data, (bytes, bytearray)) else 'N/A'}")
