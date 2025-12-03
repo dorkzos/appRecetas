@@ -4,6 +4,7 @@ from PyPDF2 import PdfReader, PdfWriter
 from io import BytesIO
 import os
 from auth import AuthManager
+from st_tiny_editor import st_editor
 
 # Configuración de la página
 st.set_page_config(
@@ -171,8 +172,20 @@ auth_manager = AuthManager()
 
 # Inicializar session state para autenticación
 if 'logged_in' not in st.session_state:
-    st.session_state.logged_in = False
-    st.session_state.user_data = None
+    # Permitir saltarse login en modo local/desarrollo
+    dev_mode = os.getenv('DEV_MODE', 'false').lower() == 'true'
+    
+    if dev_mode:
+        st.session_state.logged_in = True
+        st.session_state.user_data = {
+            'nombre': 'Dr.',
+            'apellido': 'Desarrollo',
+            'username': 'dev_user'
+        }
+    else:
+        st.session_state.logged_in = False
+        st.session_state.user_data = None
+    
     st.session_state.show_register = False
 
 # Función para mostrar el formulario de login
@@ -278,14 +291,20 @@ with st.form(key='receta_form', clear_on_submit=False):
         label_contenido = "Indicaciones / Notas Médicas"
         placeholder_contenido = "Escriba aquí las indicaciones preoperatorias, notas médicas o cualquier otra información relevante..."
     
-    contenido = st.text_area(
-        label_contenido,
+    st.markdown(f"**{label_contenido}**")
+    
+    # Editor de texto enriquecido con TinyMCE
+    contenido = st_editor(
         value=st.session_state.form_data['contenido'],
-        height=250,
-        placeholder=placeholder_contenido,
-        key='contenido_input',
+        height=300,
+        use_container_width=True,
+        plugins='lists link code',
+        toolbar='bold italic underline | bullist numlist | link',
         disabled=st.session_state.pdf_generated
     )
+    
+    if not contenido:
+        contenido = st.session_state.form_data['contenido']
     
     # Botones de acción
     col1, col2 = st.columns([1, 1])
